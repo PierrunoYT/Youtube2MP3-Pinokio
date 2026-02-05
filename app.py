@@ -96,17 +96,54 @@ def download_music(link: str, progress=gr.Progress()) -> Tuple[str, str]:
 
 
 def build_ui() -> gr.Blocks:
-    with gr.Blocks(title="Youtube2MP3") as demo:
-        gr.Markdown("Paste a YouTube link to download MP3.")
-        link = gr.Textbox(label="YouTube link", placeholder="https://...")
-        download_btn = gr.Button("Download")
-        output_file = gr.File(label="Download file")
-        status = gr.Textbox(label="Status", interactive=False)
+    theme = gr.themes.Soft(
+        primary_hue="red",
+        secondary_hue="slate",
+        neutral_hue="slate",
+    )
+    with gr.Blocks(title="Youtube2MP3", theme=theme) as demo:
+        gr.Markdown(
+            """
+            # Youtube2MP3
+            Convert a YouTube video to MP3 in one click.
+            """
+        )
+
+        with gr.Row():
+            with gr.Column(scale=3):
+                link = gr.Textbox(
+                    label="YouTube link",
+                    placeholder="https://www.youtube.com/watch?v=...",
+                )
+            with gr.Column(scale=1, min_width=160):
+                download_btn = gr.Button("Download MP3", variant="primary")
+                clear_btn = gr.Button("Clear", variant="secondary")
+
+        with gr.Row():
+            output_file = gr.File(
+                label="Your download",
+                file_count="single",
+            )
+            status = gr.Textbox(label="Status", interactive=False)
+
+        with gr.Accordion("Tips", open=False):
+            gr.Markdown(
+                """
+                - Use a full YouTube URL or short youtu.be link.
+                - If you get errors, make sure `ffmpeg` is installed.
+                - Large videos can take a few minutes to process.
+                """
+            )
 
         download_btn.click(
             fn=download_music,
             inputs=[link],
             outputs=[output_file, status],
+        )
+        clear_btn.click(
+            fn=lambda: ("", None, ""),
+            inputs=[],
+            outputs=[link, output_file, status],
         )
 
     return demo
