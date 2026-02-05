@@ -1,7 +1,8 @@
 import os
+import shutil
 import tempfile
 import zipfile
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import gradio as gr
 import yt_dlp
@@ -74,25 +75,28 @@ def _yt_dlp_download(
     return _collect_output_files(output_dir)
 
 
-def download_music(link: str, progress=gr.Progress()) -> Tuple[str, str]:
+def download_music(link: str, progress=gr.Progress()) -> Tuple[Optional[str], str]:
     if not link or not link.strip():
-        return "", "Please provide a YouTube link."
+        return None, "Please provide a YouTube link."
 
     link = link.strip()
     output_dir = tempfile.mkdtemp(prefix="downloads_")
     progress(0.01, desc="Validating link")
 
     try:
+        if shutil.which("ffmpeg") is None:
+            return None, "ffmpeg not found. Install ffmpeg and restart the app."
+
         if any(host in link for host in YOUTUBE_HOSTS):
             files = _yt_dlp_download([link], output_dir, progress)
             if not files:
-                return "", "No files were downloaded. Check the link or ffmpeg."
+                return None, "No files were downloaded. Check the link or ffmpeg."
             out_path, msg = _zip_if_needed(output_dir, files)
             return out_path, msg
 
-        return "", "Unsupported link. Please use a YouTube link."
+        return None, "Unsupported link. Please use a YouTube link."
     except Exception as exc:
-        return "", f"Error: {exc}"
+        return None, f"Error: {exc}"
 
 
 def build_ui() -> gr.Blocks:
