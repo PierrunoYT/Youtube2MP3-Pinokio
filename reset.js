@@ -3,13 +3,13 @@ module.exports = {
     {
       method: "fs.rm",
       params: {
-        path: "app"
+        path: "env"
       }
     },
     {
       method: "notify",
       params: {
-        html: "Reset complete! All files have been removed. Click 'Install' to reinstall PersonaPlex."
+        html: "Reset complete! The environment has been removed. Click 'Install' to reinstall."
       }
     }
   ]

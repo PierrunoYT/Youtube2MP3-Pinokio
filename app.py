@@ -1,8 +1,9 @@
 import os
 import shutil
-import tempfile
 import zipfile
 from typing import List, Optional, Tuple
+
+OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "downloads")
 
 import gradio as gr
 import yt_dlp
@@ -80,7 +81,9 @@ def download_music(link: str, progress=gr.Progress()) -> Tuple[Optional[str], st
         return None, "Please provide a YouTube link."
 
     link = link.strip()
-    output_dir = tempfile.mkdtemp(prefix="downloads_")
+    if os.path.exists(OUTPUT_DIR):
+        shutil.rmtree(OUTPUT_DIR)
+    os.makedirs(OUTPUT_DIR)
     progress(0.01, desc="Validating link")
 
     try:
@@ -88,10 +91,10 @@ def download_music(link: str, progress=gr.Progress()) -> Tuple[Optional[str], st
             return None, "ffmpeg not found. Install ffmpeg and restart the app."
 
         if any(host in link for host in YOUTUBE_HOSTS):
-            files = _yt_dlp_download([link], output_dir, progress)
+            files = _yt_dlp_download([link], OUTPUT_DIR, progress)
             if not files:
                 return None, "No files were downloaded. Check the link or ffmpeg."
-            out_path, msg = _zip_if_needed(output_dir, files)
+            out_path, msg = _zip_if_needed(OUTPUT_DIR, files)
             return out_path, msg
 
         return None, "Unsupported link. Please use a YouTube link."
