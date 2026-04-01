@@ -1,2 +1,3 @@
 gradio
+imageio-ffmpeg
 yt-dlp

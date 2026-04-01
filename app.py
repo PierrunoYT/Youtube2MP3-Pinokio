@@ -3,10 +3,12 @@ import shutil
 import zipfile
 from typing import List, Optional, Tuple
 
-OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "downloads")
-
 import gradio as gr
+import imageio_ffmpeg
 import yt_dlp
+
+OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "downloads")
+FFMPEG_EXE = imageio_ffmpeg.get_ffmpeg_exe()
 
 YOUTUBE_HOSTS = ("youtube.com", "youtu.be")
 
@@ -57,6 +59,7 @@ def _yt_dlp_download(
         "outtmpl": os.path.join(output_dir, "%(title)s.%(ext)s"),
         "quiet": True,
         "no_warnings": True,
+        "ffmpeg_location": FFMPEG_EXE,
         "progress_hooks": [_hook],
         "postprocessors": [
             {
@@ -87,9 +90,6 @@ def download_music(link: str, progress=gr.Progress()) -> Tuple[Optional[str], st
     progress(0.01, desc="Validating link")
 
     try:
-        if shutil.which("ffmpeg") is None:
-            return None, "ffmpeg not found. Install ffmpeg and restart the app."
-
         if any(host in link for host in YOUTUBE_HOSTS):
             files = _yt_dlp_download([link], OUTPUT_DIR, progress)
             if not files:
@@ -102,13 +102,15 @@ def download_music(link: str, progress=gr.Progress()) -> Tuple[Optional[str], st
         return None, f"Error: {exc}"
 
 
+_THEME = gr.themes.Soft(
+    primary_hue="red",
+    secondary_hue="slate",
+    neutral_hue="slate",
+)
+
+
 def build_ui() -> gr.Blocks:
-    theme = gr.themes.Soft(
-        primary_hue="red",
-        secondary_hue="slate",
-        neutral_hue="slate",
-    )
-    with gr.Blocks(title="Youtube2MP3", theme=theme) as demo:
+    with gr.Blocks(title="Youtube2MP3") as demo:
         gr.Markdown(
             """
             # Youtube2MP3
@@ -157,4 +159,4 @@ def build_ui() -> gr.Blocks:
 
 
 if __name__ == "__main__":
-    build_ui().launch()
+    build_ui().launch(theme=_THEME)
