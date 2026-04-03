@@ -43,15 +43,16 @@ Youtube2MP3 is a Pinokio app that provides a web-based interface for downloading
 
 ```
 Youtube2DL-Pinokio/
-├── app.py              # Main Gradio application
+├── app/
+│   ├── app.py          # Main Gradio application
+│   └── requirements.txt
 ├── pinokio.js          # Pinokio app configuration
 ├── install.js          # Installation script
 ├── start.js            # Start script (launches the app)
 ├── update.js           # Update script
-├── reset.js            # Reset script (removes app files)
+├── reset.js            # Reset script (removes the venv)
 ├── link.js             # Deduplication script
-├── requirements.txt    # Python dependencies
-└── icon.png           # App icon
+└── icon.jpg            # App icon
 ```
 
 ## Technical Details
@@ -79,7 +80,7 @@ Youtube2DL-Pinokio/
 
 ## Notes
 
-- Downloads are stored in temporary directories
+- Downloaded MP3s and zips are written under `app/downloads/` while the app runs
 - The app validates YouTube links before downloading
 - Multiple files are automatically zipped for download
 - Progress is shown during the download process

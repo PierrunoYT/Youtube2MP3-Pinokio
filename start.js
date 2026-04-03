@@ -1,26 +1,26 @@
 module.exports = {
   daemon: true,
-  env: [],
   run: [
     {
       method: "shell.run",
       params: {
         venv: "env",
+        env: {},
+        path: "app",
         message: [
           "python app.py"
         ],
         on: [{
-          // Monitor for Gradio local URL output (localhost)
-          "event": "/http:\\/\\/127\\.0\\.0\\.1:\\d{2,5}/",
+          // Capture group 1 = full http URL (Gradio / local servers); input.event[1] per Pinokio + Gepeto skill
+          "event": "/(http:\/\/\\S+)/",
           "done": true
         }]
       }
     },
-    // Set the local URL variable for the "Open Web UI" button
     {
       method: "local.set",
       params: {
-        url: "{{input.event[0]}}"
+        url: "{{input.event[1]}}"
       }
     },
     {
