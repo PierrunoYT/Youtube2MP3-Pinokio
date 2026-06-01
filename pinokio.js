@@ -1,9 +1,5 @@
 module.exports = {
   version: "5.0",
-  title: "Youtube2MP3",
-  description: "🎵 YouTube to MP3 downloader with a simple Gradio UI. Paste a YouTube link to download MP3. Requires ffmpeg installed on your system.",
-  icon: "icon.jpg",
-  env: [],
   menu: async (kernel, info) => {
     let installed = info.exists("env")
     let running = {

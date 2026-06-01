@@ -3,8 +3,7 @@ module.exports = {
     {
       method: "fs.link",
       params: {
-        venv: "env",
-        path: "."
+        venv: "env"
       }
     },
     {

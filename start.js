@@ -11,7 +11,6 @@ module.exports = {
           "python app.py"
         ],
         on: [{
-          // Capture group 1 = full http URL (Gradio / local servers); input.event[1] per Pinokio + Gepeto skill
           "event": "/(http:\/\/\\S+)/",
           "done": true
         }]
