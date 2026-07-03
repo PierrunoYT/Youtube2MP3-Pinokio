@@ -2,6 +2,7 @@ import os
 import shutil
 import zipfile
 from typing import List, Optional, Tuple
+from urllib.parse import urlparse
 
 import gradio as gr
 import imageio_ffmpeg
@@ -10,7 +11,16 @@ import yt_dlp
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "downloads")
 FFMPEG_EXE = imageio_ffmpeg.get_ffmpeg_exe()
 
-YOUTUBE_HOSTS = ("youtube.com", "youtu.be")
+YOUTUBE_HOSTS = ("youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be")
+
+
+def _is_youtube_link(link: str) -> bool:
+    try:
+        host = urlparse(link).hostname or ""
+    except ValueError:
+        return False
+    host = host.lower()
+    return host in YOUTUBE_HOSTS
 
 
 def _ensure_dir(path: str) -> None:
@@ -90,7 +100,7 @@ def download_music(link: str, progress=gr.Progress()) -> Tuple[Optional[str], st
     progress(0.01, desc="Validating link")
 
     try:
-        if any(host in link for host in YOUTUBE_HOSTS):
+        if _is_youtube_link(link):
             files = _yt_dlp_download([link], OUTPUT_DIR, progress)
             if not files:
                 return None, "No files were downloaded. Check the link or ffmpeg."
