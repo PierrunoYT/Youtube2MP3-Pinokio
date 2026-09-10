@@ -11,7 +11,7 @@ module.exports = {
           "python app.py"
         ],
         on: [{
-          "event": "/(http:\/\/\\S+)/",
+          "event": "/(http:\/\/[0-9.:]+)/",
           "done": true
         }]
       }
@@ -25,7 +25,7 @@ module.exports = {
     {
       method: "notify",
       params: {
-        html: "YouTube2DL is running! Click 'Open Web UI' to open the downloader."
+        html: "Youtube2MP3 is running! Click 'Open Web UI' to open the downloader."
       }
     }
   ]

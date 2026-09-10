@@ -3,7 +3,7 @@ module.exports = {
     {
       method: "shell.run",
       params: {
-        message: "git pull"
+        message: "git pull --ff-only"
       }
     },
     {
@@ -11,7 +11,7 @@ module.exports = {
       params: {
         venv: "env",
         path: "app",
-        message: "uv pip install -r requirements.txt"
+        message: "uv pip install --upgrade -r requirements.txt"
       }
     },
     {
