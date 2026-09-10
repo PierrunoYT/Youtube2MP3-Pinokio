@@ -76,7 +76,7 @@ def _yt_dlp_download(
         "format": "bestaudio/best",
         "outtmpl": os.path.join(output_dir, "%(title).100B [%(id)s].%(ext)s"),
         "quiet": True,
-        "no_warnings": True,
+        "js_runtimes": {"deno": {}, "node": {}},
         "ffmpeg_location": imageio_ffmpeg.get_ffmpeg_exe(),
         "progress_hooks": [_hook],
         "postprocessors": [
@@ -160,7 +160,7 @@ def build_ui() -> gr.Blocks:
             gr.Markdown(
                 """
                 - Use a full YouTube URL or short youtu.be link.
-                - If you get errors, make sure `ffmpeg` is installed.
+                - Audio conversion uses bundled FFmpeg. Use Update if downloads fail.
                 - Large videos can take a few minutes to process.
                 """
             )
@@ -169,15 +169,17 @@ def build_ui() -> gr.Blocks:
             fn=download_music,
             inputs=[link],
             outputs=[output_file, status],
+            api_name="download",
         )
         clear_btn.click(
             fn=lambda: ("", None, ""),
             inputs=[],
             outputs=[link, output_file, status],
+            api_name=False,
         )
 
     return demo
 
 
 if __name__ == "__main__":
-    build_ui().launch(theme=_THEME)
+    build_ui().launch(theme=_THEME, server_name="127.0.0.1", share=False)
