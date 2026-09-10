@@ -3,3 +3,5 @@ downloads/
 app/downloads/
 __pycache__/
 *.pyc
+.uv-cache/
+logs/

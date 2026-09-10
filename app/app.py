@@ -1,5 +1,6 @@
 import os
 import shutil
+import tempfile
 import zipfile
 from typing import List, Optional, Tuple
 from urllib.parse import urlparse
@@ -9,15 +10,19 @@ import imageio_ffmpeg
 import yt_dlp
 
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "downloads")
-FFMPEG_EXE = imageio_ffmpeg.get_ffmpeg_exe()
 
 YOUTUBE_HOSTS = ("youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be")
 
 
 def _is_youtube_link(link: str) -> bool:
     try:
-        host = urlparse(link).hostname or ""
-    except ValueError:
+        parsed = urlparse(link)
+        host = parsed.hostname or ""
+        if (parsed.scheme not in ("http", "https") or parsed.username is not None
+                or parsed.password is not None or parsed.port not in (None, 80, 443)
+                or any(char.isspace() or ord(char) < 32 for char in link)):
+            return False
+    except (ValueError, TypeError, AttributeError):
         return False
     host = host.lower()
     return host in YOUTUBE_HOSTS
@@ -28,6 +33,8 @@ def _ensure_dir(path: str) -> None:
 
 
 def _zip_if_needed(output_dir: str, downloaded_files: List[str]) -> Tuple[str, str]:
+    if not downloaded_files:
+        raise ValueError("No MP3 files to package.")
     if len(downloaded_files) == 1:
         return downloaded_files[0], "Downloaded 1 file."
 
@@ -41,8 +48,9 @@ def _zip_if_needed(output_dir: str, downloaded_files: List[str]) -> Tuple[str, s
 def _collect_output_files(output_dir: str) -> List[str]:
     files = []
     for name in os.listdir(output_dir):
-        if name.lower().endswith(".mp3"):
-            files.append(os.path.join(output_dir, name))
+        file_path = os.path.join(output_dir, name)
+        if name.lower().endswith(".mp3") and os.path.isfile(file_path):
+            files.append(file_path)
     return sorted(files)
 
 
@@ -66,10 +74,10 @@ def _yt_dlp_download(
 
     ydl_opts = {
         "format": "bestaudio/best",
-        "outtmpl": os.path.join(output_dir, "%(title)s.%(ext)s"),
+        "outtmpl": os.path.join(output_dir, "%(title).100B [%(id)s].%(ext)s"),
         "quiet": True,
         "no_warnings": True,
-        "ffmpeg_location": FFMPEG_EXE,
+        "ffmpeg_location": imageio_ffmpeg.get_ffmpeg_exe(),
         "progress_hooks": [_hook],
         "postprocessors": [
             {
@@ -90,25 +98,28 @@ def _yt_dlp_download(
 
 
 def download_music(link: str, progress=gr.Progress()) -> Tuple[Optional[str], str]:
-    if not link or not link.strip():
+    if not isinstance(link, str) or not link.strip():
         return None, "Please provide a YouTube link."
 
     link = link.strip()
-    if os.path.exists(OUTPUT_DIR):
-        shutil.rmtree(OUTPUT_DIR)
-    os.makedirs(OUTPUT_DIR)
-    progress(0.01, desc="Validating link")
+    if not _is_youtube_link(link):
+        return None, "Unsupported link. Please use an HTTP or HTTPS YouTube link."
 
+    output_dir = None
     try:
-        if _is_youtube_link(link):
-            files = _yt_dlp_download([link], OUTPUT_DIR, progress)
-            if not files:
-                return None, "No files were downloaded. Check the link or ffmpeg."
-            out_path, msg = _zip_if_needed(OUTPUT_DIR, files)
-            return out_path, msg
-
-        return None, "Unsupported link. Please use a YouTube link."
+        progress(0.01, desc="Validating link")
+        _ensure_dir(OUTPUT_DIR)
+        output_dir = tempfile.mkdtemp(prefix="download-", dir=OUTPUT_DIR)
+        files = _yt_dlp_download([link], output_dir, progress)
+        if not files:
+            shutil.rmtree(output_dir, ignore_errors=True)
+            return None, "No files were downloaded. Check the link or ffmpeg."
+        out_path, msg = _zip_if_needed(output_dir, files)
+        progress(1.0, desc="Complete")
+        return out_path, msg
     except Exception as exc:
+        if output_dir is not None:
+            shutil.rmtree(output_dir, ignore_errors=True)
         return None, f"Error: {exc}"
 
 
