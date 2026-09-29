@@ -32,7 +32,8 @@ class DownloadTests(unittest.TestCase):
 
     def test_validation(self):
         for url in ['https://youtu.be/abc', 'http://www.youtube.com/watch?v=abc',
-                    'https://m.youtube.com/playlist?list=abc', 'https://YOUTUBE.COM/shorts/abc']:
+                    'https://m.youtube.com/playlist?list=abc', 'https://YOUTUBE.COM/shorts/abc',
+                    'https://music.youtube.com/watch?v=abc']:
             self.assertTrue(app._is_youtube_link(url), url)
         for url in ['ftp://youtube.com/x', '//youtube.com/x', 'https://youtube.com.evil.test',
                     'https://evil.test/youtube.com', 'https://user@youtube.com/x',

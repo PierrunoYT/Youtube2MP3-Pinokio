@@ -67,6 +67,7 @@ Youtube2MP3-Pinokio/
 
 - **Supported URLs:**
   - `youtube.com`
+  - `music.youtube.com`
   - `youtu.be`
 
 ## Pinokio Actions
@@ -81,7 +82,7 @@ Youtube2MP3-Pinokio/
 
 - Each request stores its MP3s and ZIP in a separate folder under `app/downloads/`. Completed results remain available after later requests. Failed requests remove their own partial files.
 - Completed downloads are retained until you delete them. After saving files you need and stopping the app, you can remove old folders under `app/downloads/` to reclaim space. Gradio also uses its own temporary file cache.
-- The app accepts HTTP/HTTPS URLs on `youtube.com`, `www.youtube.com`, `m.youtube.com`, and `youtu.be`. Credentials and nonstandard ports are rejected.
+- The app accepts HTTP/HTTPS URLs on `youtube.com`, `www.youtube.com`, `m.youtube.com`, `music.youtube.com`, and `youtu.be`. Credentials and nonstandard ports are rejected.
 - Multiple files are automatically zipped for download
 - Progress is shown during the download process
 - The server binds to `127.0.0.1`, with Gradio choosing an available port. Public sharing is disabled.

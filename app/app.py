@@ -11,7 +11,9 @@ import yt_dlp
 
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "downloads")
 
-YOUTUBE_HOSTS = ("youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be")
+YOUTUBE_HOSTS = (
+    "youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com", "youtu.be",
+)
 
 
 def _is_youtube_link(link: str) -> bool:
