@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import sys
 import tempfile
 import threading
 import unittest
@@ -119,6 +120,19 @@ class DownloadTests(unittest.TestCase):
             second = ydl.prepare_filename({'title': 'Same title', 'id': 'second', 'ext': 'webm'})
         self.assertNotEqual(first, second)
         self.assertEqual(os.path.dirname(first), str(self.root))
+
+    def test_error_messages_have_no_terminal_colors(self):
+        with patch.object(app.yt_dlp, 'YoutubeDL') as downloader:
+            app._yt_dlp_download(['https://youtu.be/example'], str(self.root), self.progress)
+            options = downloader.call_args.args[0]
+        ydl_module = sys.modules['yt_dlp.YoutubeDL']
+        env = {k: v for k, v in os.environ.items() if k != 'NO_COLOR'}
+        env['TERM'] = 'xterm'
+        with patch.object(ydl_module, 'supports_terminal_sequences', return_value=True), \
+                patch.dict(os.environ, env, clear=True), app.yt_dlp.YoutubeDL(options) as ydl:
+            with self.assertRaises(app.yt_dlp.utils.DownloadError) as error:
+                ydl.report_error('boom')
+        self.assertNotIn('\x1b', str(error.exception))
 
 
 if __name__ == '__main__':

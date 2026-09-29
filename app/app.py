@@ -76,6 +76,7 @@ def _yt_dlp_download(
         "format": "bestaudio/best",
         "outtmpl": os.path.join(output_dir, "%(title).100B [%(id)s].%(ext)s"),
         "quiet": True,
+        "color": {"stdout": "no_color", "stderr": "no_color"},
         "js_runtimes": {"deno": {}, "node": {}},
         "ffmpeg_location": imageio_ffmpeg.get_ffmpeg_exe(),
         "progress_hooks": [_hook],
