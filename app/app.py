@@ -9,7 +9,7 @@ import gradio as gr
 import imageio_ffmpeg
 import yt_dlp
 
-OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "downloads")
+OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "downloads")
 
 YOUTUBE_HOSTS = ("youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be")
 
@@ -183,4 +183,9 @@ def build_ui() -> gr.Blocks:
 
 
 if __name__ == "__main__":
-    build_ui().launch(theme=_THEME, server_name="127.0.0.1", share=False)
+    build_ui().launch(
+        theme=_THEME,
+        server_name="127.0.0.1",
+        share=False,
+        allowed_paths=[OUTPUT_DIR],
+    )
