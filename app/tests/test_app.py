@@ -109,8 +109,24 @@ class DownloadTests(unittest.TestCase):
             self.assertEqual(zipped.namelist(), ['one.mp3', 'two.MP3'])
             self.assertEqual(zipped.read('one.mp3'), b'audio')
         self.assertIn('2 files', status)
+        self.assertEqual(app._collect_output_files(str(self.root)), [])
         with self.assertRaises(ValueError):
             app._zip_if_needed(str(self.root), [])
+
+    def test_playlist_progress_never_moves_backwards(self):
+        calls = []
+        with patch.object(app.yt_dlp, 'YoutubeDL') as downloader:
+            app._yt_dlp_download(['https://youtu.be/example'], str(self.root),
+                                 lambda value, desc=None: calls.append(value))
+            hook = downloader.call_args.args[0]['progress_hooks'][0]
+        calls.clear()
+        for index in (1, 2, 3):
+            for done in (0, 50, 100):
+                hook({'status': 'downloading', 'downloaded_bytes': done, 'total_bytes': 100,
+                      'filename': 'track.webm',
+                      'info_dict': {'n_entries': 3, 'playlist_autonumber': index}})
+        self.assertEqual(calls, sorted(calls))
+        self.assertAlmostEqual(calls[-1], 0.95)
 
     def test_same_title_videos_get_distinct_paths(self):
         with patch.object(app.yt_dlp, 'YoutubeDL') as downloader:

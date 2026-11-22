@@ -44,6 +44,8 @@ def _zip_if_needed(output_dir: str, downloaded_files: List[str]) -> Tuple[str, s
     with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zipf:
         for file_path in downloaded_files:
             zipf.write(file_path, arcname=os.path.basename(file_path))
+    for file_path in downloaded_files:
+        os.remove(file_path)
     return zip_path, f"Downloaded {len(downloaded_files)} files (zipped)."
 
 
@@ -60,23 +62,26 @@ def _yt_dlp_download(
     targets: List[str], output_dir: str, progress: gr.Progress
 ) -> List[str]:
     _ensure_dir(output_dir)
-    status = {"current": "", "percent": 0}
 
     def _hook(d):
-        if d.get("status") == "downloading":
-            total = d.get("total_bytes") or d.get("total_bytes_estimate") or 0
-            downloaded = d.get("downloaded_bytes") or 0
-            if total:
-                status["percent"] = int(downloaded * 100 / total)
-            status["current"] = d.get("filename", "")
-            progress(
-                min(status["percent"] / 100, 0.95),
-                desc=f"Downloading {os.path.basename(status['current'])}",
-            )
+        if d.get("status") != "downloading":
+            return
+        info = d.get("info_dict") or {}
+        count = max(info.get("n_entries") or 1, 1)
+        index = min(max(info.get("playlist_autonumber") or 1, 1), count)
+        total = d.get("total_bytes") or d.get("total_bytes_estimate") or 0
+        downloaded = d.get("downloaded_bytes") or 0
+        fraction = min(downloaded / total, 1.0) if total else 0.0
+        label = f" {index}/{count}" if count > 1 else ""
+        progress(
+            0.05 + 0.9 * ((index - 1) + fraction) / count,
+            desc=f"Downloading{label}: {os.path.basename(d.get('filename', ''))}",
+        )
 
     ydl_opts = {
         "format": "bestaudio/best",
         "outtmpl": os.path.join(output_dir, "%(title).100B [%(id)s].%(ext)s"),
+        "noplaylist": True,
         "quiet": True,
         "color": {"stdout": "no_color", "stderr": "no_color"},
         "js_runtimes": {"deno": {}, "node": {}},
@@ -91,10 +96,9 @@ def _yt_dlp_download(
         ],
     }
 
+    progress(0.02, desc="Fetching video information")
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        for idx, target in enumerate(targets, start=1):
-            progress(0.05, desc=f"Preparing {idx}/{len(targets)}")
-            ydl.download([target])
+        ydl.download(targets)
 
     progress(0.98, desc="Finalizing")
     return _collect_output_files(output_dir)
@@ -163,6 +167,7 @@ def build_ui() -> gr.Blocks:
             gr.Markdown(
                 """
                 - Use a full YouTube URL or short youtu.be link.
+                - Video links download one MP3. Playlist links (`/playlist?list=...`) download a ZIP.
                 - Audio conversion uses bundled FFmpeg. Use Update if downloads fail.
                 - Large videos can take a few minutes to process.
                 """

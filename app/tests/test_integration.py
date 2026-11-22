@@ -37,6 +37,7 @@ class IntegrationTests(unittest.TestCase):
                 _, url, _ = demo.launch(theme=app._THEME, server_name='127.0.0.1',
                                         share=False, prevent_thread_lock=True, quiet=True)
             client = gradio_client.Client(url, verbose=False)
+            self.addCleanup(client.close)
             invalid = client.predict('https://example.com', api_name='/download')
             self.assertIsNone(invalid[0])
             self.assertIn('Unsupported', invalid[1])

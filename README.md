@@ -11,8 +11,9 @@ Youtube2MP3 is a Pinokio app that provides a web-based interface for downloading
 - Simple web-based UI powered by Gradio
 - Download YouTube videos as MP3 files
 - Automatic audio extraction and conversion
-- Progress tracking during downloads
-- Support for single file downloads (returns MP3) or multiple files (returns ZIP)
+- Progress tracking during downloads, including per-track position for playlists
+- A video link returns one MP3; a playlist link (`/playlist?list=...`) returns a ZIP of all tracks
+- Video links opened from inside a playlist (`watch?v=...&list=...`) download only that video
 - 192 kbps MP3 quality output
 
 ## Requirements
@@ -35,7 +36,7 @@ Youtube2MP3 is a Pinokio app that provides a web-based interface for downloading
 3. Paste a YouTube link (e.g., `https://www.youtube.com/watch?v=...`)
 4. Click "Download MP3"
 5. Wait for the download to complete
-6. Download the resulting MP3 file (or ZIP if multiple files)
+6. Download the resulting MP3 file (or ZIP for a playlist link)
 
 ## Project Structure
 
@@ -80,11 +81,11 @@ Youtube2MP3-Pinokio/
 
 ## Notes
 
-- Each request stores its MP3s and ZIP in a separate folder under `app/downloads/`. Completed results remain available after later requests. Failed requests remove their own partial files.
+- Each request stores its result in a separate folder under `app/downloads/`: one MP3, or for playlists a ZIP (the individual MP3s are removed after zipping). Completed results remain available after later requests. Failed requests remove their own partial files.
 - Completed downloads are retained until you delete them. After saving files you need and stopping the app, you can remove old folders under `app/downloads/` to reclaim space. Gradio also uses its own temporary file cache.
 - The app accepts HTTP/HTTPS URLs on `youtube.com`, `www.youtube.com`, `m.youtube.com`, `music.youtube.com`, and `youtu.be`. Credentials and nonstandard ports are rejected.
-- Multiple files are automatically zipped for download
-- Progress is shown during the download process
+- Playlist downloads are automatically zipped. To download a whole playlist, use its `youtube.com/playlist?list=...` link; a `watch?v=...&list=...` link downloads just that video.
+- Progress covers the whole request, so it advances steadily across playlist tracks
 - The server binds to `127.0.0.1`, with Gradio choosing an available port. Public sharing is disabled.
 
 ## Programmatic access
