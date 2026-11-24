@@ -51,7 +51,7 @@ Youtube2MP3-Pinokio/
 ├── update.js           # Update script
 ├── reset.js            # Reset script (removes the venv)
 ├── link.js             # Deduplication script
-└── icon.jpg            # App icon
+└── icon.png            # App icon
 ```
 
 ## Technical Details
