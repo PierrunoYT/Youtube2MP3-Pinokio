@@ -14,6 +14,22 @@ OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "downloads
 YOUTUBE_HOSTS = (
     "youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com", "youtu.be",
 )
+VIDEO_PATH_PREFIXES = ("/shorts/", "/live/", "/embed/")
+
+
+class _ErrorLog:
+    """yt-dlp logger that keeps error messages and discards other output."""
+
+    def __init__(self) -> None:
+        self.errors: List[str] = []
+
+    def debug(self, msg: str) -> None:
+        pass
+
+    info = warning = debug
+
+    def error(self, msg: str) -> None:
+        self.errors.append(msg)
 
 
 def _is_youtube_link(link: str) -> bool:
@@ -27,7 +43,15 @@ def _is_youtube_link(link: str) -> bool:
     except (ValueError, TypeError, AttributeError):
         return False
     host = host.lower()
-    return host in YOUTUBE_HOSTS
+    if host not in YOUTUBE_HOSTS:
+        return False
+    path = parsed.path
+    if host == "youtu.be":
+        video_id = path.strip("/")
+        return bool(video_id) and "/" not in video_id
+    # Only single videos and explicit playlists; channel, handle and search
+    # pages would otherwise enumerate and download unbounded result sets.
+    return path in ("/watch", "/playlist") or path.startswith(VIDEO_PATH_PREFIXES)
 
 
 def _ensure_dir(path: str) -> None:
@@ -78,11 +102,16 @@ def _yt_dlp_download(
             desc=f"Downloading{label}: {os.path.basename(d.get('filename', ''))}",
         )
 
+    log = _ErrorLog()
     ydl_opts = {
         "format": "bestaudio/best",
         "outtmpl": os.path.join(output_dir, "%(title).100B [%(id)s].%(ext)s"),
         "noplaylist": True,
         "quiet": True,
+        "logger": log,
+        # Like the yt-dlp CLI: an unavailable playlist entry is skipped instead
+        # of aborting the request and discarding tracks that already converted.
+        "ignoreerrors": "only_download",
         "color": {"stdout": "no_color", "stderr": "no_color"},
         "js_runtimes": {"deno": {}, "node": {}},
         "ffmpeg_location": imageio_ffmpeg.get_ffmpeg_exe(),
@@ -101,7 +130,10 @@ def _yt_dlp_download(
         ydl.download(targets)
 
     progress(0.98, desc="Finalizing")
-    return _collect_output_files(output_dir)
+    files = _collect_output_files(output_dir)
+    if not files and log.errors:
+        raise yt_dlp.utils.DownloadError(log.errors[-1])
+    return files
 
 
 def download_music(link: str, progress=gr.Progress()) -> Tuple[Optional[str], str]:
@@ -110,7 +142,7 @@ def download_music(link: str, progress=gr.Progress()) -> Tuple[Optional[str], st
 
     link = link.strip()
     if not _is_youtube_link(link):
-        return None, "Unsupported link. Please use an HTTP or HTTPS YouTube link."
+        return None, "Unsupported link. Please use a YouTube video or playlist link."
 
     output_dir = None
     try:

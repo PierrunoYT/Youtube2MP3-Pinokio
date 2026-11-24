@@ -38,7 +38,10 @@ class DownloadTests(unittest.TestCase):
         for url in ['ftp://youtube.com/x', '//youtube.com/x', 'https://youtube.com.evil.test',
                     'https://evil.test/youtube.com', 'https://user@youtube.com/x',
                     'https://youtube.com:bad/x', 'https://youtube.com:1234/x',
-                    'https://[youtube.com', 'https://you\ntube.com/x']:
+                    'https://[youtube.com', 'https://you\ntube.com/x',
+                    'https://www.youtube.com/@channel', 'https://www.youtube.com/@channel/videos',
+                    'https://www.youtube.com/results?search_query=music',
+                    'https://www.youtube.com/', 'https://youtu.be/']:
             self.assertFalse(app._is_youtube_link(url), url)
 
     def test_invalid_input_does_not_touch_downloads(self):
@@ -138,7 +141,7 @@ class DownloadTests(unittest.TestCase):
         self.assertNotEqual(first, second)
         self.assertEqual(os.path.dirname(first), str(self.root))
 
-    def test_error_messages_have_no_terminal_colors(self):
+    def test_entry_errors_are_collected_without_terminal_colors(self):
         with patch.object(app.yt_dlp, 'YoutubeDL') as downloader:
             app._yt_dlp_download(['https://youtu.be/example'], str(self.root), self.progress)
             options = downloader.call_args.args[0]
@@ -147,9 +150,26 @@ class DownloadTests(unittest.TestCase):
         env['TERM'] = 'xterm'
         with patch.object(ydl_module, 'supports_terminal_sequences', return_value=True), \
                 patch.dict(os.environ, env, clear=True), app.yt_dlp.YoutubeDL(options) as ydl:
-            with self.assertRaises(app.yt_dlp.utils.DownloadError) as error:
-                ydl.report_error('boom')
-        self.assertNotIn('\x1b', str(error.exception))
+            ydl.report_error('boom')
+        self.assertEqual(options['logger'].errors, ['ERROR: boom'])
+
+    def test_failed_entries_keep_completed_tracks(self):
+        def run(write_track):
+            def fake_ydl(options):
+                class FakeYDL:
+                    __enter__ = lambda self: self
+                    __exit__ = lambda self, *exc: None
+                    def download(_, targets):
+                        if write_track:
+                            (self.root / 'ok.mp3').write_bytes(b'audio')
+                        options['logger'].error('ERROR: Video unavailable')
+                return FakeYDL()
+            with patch.object(app.yt_dlp, 'YoutubeDL', side_effect=fake_ydl):
+                return app._yt_dlp_download(['https://youtu.be/x'], str(self.root), self.progress)
+        self.assertEqual([Path(f).name for f in run(True)], ['ok.mp3'])
+        (self.root / 'ok.mp3').unlink()
+        with self.assertRaisesRegex(app.yt_dlp.utils.DownloadError, 'Video unavailable'):
+            run(False)
 
 
 if __name__ == '__main__':

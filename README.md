@@ -83,8 +83,8 @@ Youtube2MP3-Pinokio/
 
 - Each request stores its result in a separate folder under `app/downloads/`: one MP3, or for playlists a ZIP (the individual MP3s are removed after zipping). Completed results remain available after later requests. Failed requests remove their own partial files.
 - Completed downloads are retained until you delete them. After saving files you need and stopping the app, you can remove old folders under `app/downloads/` to reclaim space. Gradio also uses its own temporary file cache.
-- The app accepts HTTP/HTTPS URLs on `youtube.com`, `www.youtube.com`, `m.youtube.com`, `music.youtube.com`, and `youtu.be`. Credentials and nonstandard ports are rejected.
-- Playlist downloads are automatically zipped. To download a whole playlist, use its `youtube.com/playlist?list=...` link; a `watch?v=...&list=...` link downloads just that video.
+- The app accepts HTTP/HTTPS video and playlist URLs on `youtube.com`, `www.youtube.com`, `m.youtube.com`, `music.youtube.com`, and `youtu.be`: `/watch`, `/playlist`, `/shorts/…`, `/live/…`, `/embed/…`, and `youtu.be/<id>`. Channel, handle, and search pages are rejected because they can expand to unbounded downloads. Credentials and nonstandard ports are also rejected.
+- Playlist downloads are automatically zipped. To download a whole playlist, use its `youtube.com/playlist?list=...` link; a `watch?v=...&list=...` link downloads just that video. Unavailable entries (private, deleted, region-blocked) are skipped and the ZIP contains every track that succeeded; the request fails only when nothing could be downloaded.
 - Progress covers the whole request, so it advances steadily across playlist tracks
 - The server binds to `127.0.0.1`, with Gradio choosing an available port. Public sharing is disabled.
 
